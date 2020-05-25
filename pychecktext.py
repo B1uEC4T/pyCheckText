@@ -1,9 +1,20 @@
-import ast
-import _ast
 import argparse
-from typing import Union, List, Dict, Set
-import os
+import ast
+import datetime
 import gettext
+import os
+from typing import Dict, List, Set, Union
+
+import _ast
+
+try:
+    from teamcity import is_running_under_teamcity
+    if is_running_under_teamcity():
+        teamcity = True
+    else:
+        teamcity = False
+except ImportError:
+    teamcity = False
 
 class ReportFallback(gettext.NullTranslations):
     @staticmethod
@@ -121,8 +132,13 @@ class CheckTextVisitor(ast.NodeVisitor):
                     call['args'][index] = source_call
 
 def parse_folder(folder_path: str, alias: Dict[str, Union[str, None]]):
+    if teamcity:
+        timestamp = get_timestamp()
+        print("##teamcity[message text='Checking tokens in folder {}' status='INFO' timestamp='{}'".format(folder_path, timestamp))
+    else:
+        print("Checking gettext tokens in folder '{}'".format(folder_path))
     folder_calls = {}
-    for subdir, dirs, files in os.walk(folder_path):
+    for subdir, _, files in os.walk(folder_path):
         for filename in files:
             file_path = subdir + os.sep + filename
             if not filename.startswith('.') and file_path.endswith('.py'):
@@ -132,6 +148,11 @@ def parse_folder(folder_path: str, alias: Dict[str, Union[str, None]]):
 
 
 def parse_file(file_path: str, alias: Dict[str, Union[str, None]]):
+    if teamcity:
+        timestamp = get_timestamp()
+        print("##teamcity[message text='Checking tokens in file {}' status='INFO' timestamp='{}'".format(file_path, timestamp))
+    else:
+        print("Checking gettext tokens in file '{}'".format(file_path))
     with open(file_path) as f:
         data = f.read()
         tree = ast.parse(data)
@@ -144,17 +165,26 @@ def parse_file(file_path: str, alias: Dict[str, Union[str, None]]):
         }
 
 def get_translation_object(file_path: str, domain: str, languages: List[str]):
-    missing_translations = []
     translations = {}
     for lang in languages:
+        if teamcity:
+            timestamp = get_timestamp()
+            print("##teamcity[testStarted name='checkLanguageExistence.{}.{}' captureStandardOutput='false' timestamp='{}']".format(domain, lang, timestamp))
+        else:
+            print("Checking existence of language {} in domain '{}'".format(lang, domain))
         try:
             translations[lang] = gettext.translation(domain, file_path, [lang], class_=CheckTextTranslation)
+            if teamcity:
+                timestamp = get_timestamp()
+                print("##teamcity[testFinished name='checkLanguageExistence.{}.{}' timestamp='{}']".format(domain, lang, timestamp))
+            else:
+                print("Language {} in domain '{}' found.".format(lang, domain))
         except FileNotFoundError:
-            missing_translations.append(lang)
-    if missing_translations:
-        print('Missing translations detected: ')
-        for missing_translation in missing_translations:
-            print('Translation {language} is missing'.format(language=missing_translation))
+            if teamcity:
+                timestamp = get_timestamp()
+                print("##teamcity[testFailed name='checkLanguageExistence.{}.{}' type='missingFile' timestamp='{}']".format(domain, lang, timestamp))
+            else:
+                print("Language file {} is missing in domain '{}'".format(lang, domain))
     return translations
 
 def validate_translations(translators: Dict[str, gettext.translation], calls: Dict[str, Dict[str, List[Dict[str, Union[str, List[str]]]]]]):
@@ -162,16 +192,39 @@ def validate_translations(translators: Dict[str, gettext.translation], calls: Di
         plural_options = predict_plurals(translator)
         for file_name, call_objs in calls.items():
             literal_calls = call_objs['literal_calls']
+            has_failed = False
+            if teamcity:
+                timestamp = get_timestamp()
+                print("##teamcity[testStarted name='checkTokenExistence.{}.{}' captureStandardOutput='false' timestamp='{}']".format(os.path.basename(file_name), lang, timestamp))
+            else:
+                print("Verifying tokens for language {} in file '{}'".format(lang, os.path.basename(file_name)))
             for call in literal_calls:
                 if call['function'] in ['gettext', 'dgettext', 'pgettext', 'dpgettext', 'lgettext', 'ldgettext']:
                     translation = getattr(translator, call['function'])(*call['args'])
                     if isinstance(translation, tuple):
-                        print("msgid '{}' is missing a translation in language '{}'".format(translation[0], lang))
+                        has_failed = True
+                        if teamcity:
+                            timestamp = get_timestamp()
+                            print("##teamcity[message text='msgid {} is missing a translation' timestamp={}]".format(translation[0], timestamp))
+                        else:
+                            print("msgid '{}' is missing a translation in language '{}'".format(translation[0], lang))
                 else:
                     for plural_form in plural_options:
                         translation = getattr(translator, call['function'])(*call['args'], plural_form)
                         if isinstance(translation, tuple):
-                            print("msgid '{}' is missing a translation in language '{}' for plural id {}".format(translation[0], lang, plural_options[plural_form]))
+                            has_failed = True
+                            if teamcity:
+                                timestamp = get_timestamp()
+                                print("##teamcity[message text='msgid {} is missing a translation for plural is {}' timestamp={}]".format(translation[0], plural_options[plural_form], timestamp))
+                            else:
+                                print("msgid '{}' is missing a translation in language '{}' for plural id {}".format(translation[0], lang, plural_options[plural_form]))
+            timestamp = get_timestamp()
+            if teamcity:
+                if has_failed:
+                    print("##teamcity[testFailed name='checkTokenExistence.{}.{}' type='missingToken' details='Missing tokens found' timestamp='{}']".format(os.path.basename(file_name), lang, timestamp))
+                else:
+                    print("##teamcity[testFinished name='checkTokenExistence.{}.{}' timestamp='{}']".format(os.path.basename(file_name), lang, timestamp))
+
 
 def predict_plurals(translator: gettext.translation) -> Dict[int, int]:
     # A survey of the reported plural for examples from 
@@ -187,6 +240,11 @@ def predict_plurals(translator: gettext.translation) -> Dict[int, int]:
             result_indexes.add(result_index)
             options[test_int] = result_index
     return options
+
+def get_timestamp():
+    from dateutil import tz
+    timestamp = datetime.datetime.now(tz=tz.tzlocal()).strftime('%Y-%M-%dT%X.%f%z')
+    return timestamp
 
 parser = argparse.ArgumentParser(description='pyCheckText Argument Parser')
 parser.add_argument_group('File path')
@@ -206,6 +264,11 @@ if args.alias is not None:
     for alias, built_in in zip(alias_list[::2], alias_list[1::2]):
         alias_dict[alias] = built_in
 
+if teamcity:
+    timestamp = get_timestamp()
+    print("##teamcity[testSuiteStarted name='checkGettextTokens' timestamp='{}'".format(timestamp))
+else:
+    print("Validating gettext tokens")
 if args.folder_path is not None:
     calls = parse_folder(args.folder_path, alias_dict)   
 elif args.file_path is not None:
