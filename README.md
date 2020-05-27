@@ -1,4 +1,5 @@
 # pyCheckText
+![flake8](https://github.com/da1910/pyCheckText/workflows/flake8/badge.svg)
 ## Requirements
 * Python 3.8
 * python-dateutil
