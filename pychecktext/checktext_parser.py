@@ -1,11 +1,9 @@
-import gettext
 import _ast
 import ast
 from typing import Dict, Union
-import argparse
 import os
 from pychecktext import teamcity, get_timestamp
-import datetime
+
 
 class CheckTextVisitor(ast.NodeVisitor):
     def __init__(self, aliases: Dict[str, str] = {}):
@@ -27,7 +25,7 @@ class CheckTextVisitor(ast.NodeVisitor):
             "pgettext": [0, 1]}
         for alias, source in aliases.items():
             self.function_signatures[alias] = self.function_signatures[source]
-    
+
     def visit_Call(self, node: _ast.Call):
         func_object = node.func
         if hasattr(node, 'args'):
@@ -60,7 +58,7 @@ class CheckTextVisitor(ast.NodeVisitor):
                 self.expression_calls.append(call_struct)
             else:
                 self.literal_calls.append(call_struct)
-    
+
     def process_calls(self, source: str):
         for call in self.expression_calls:
             for index, call_arg in enumerate(call['args']):
@@ -68,10 +66,13 @@ class CheckTextVisitor(ast.NodeVisitor):
                     source_call = ast.get_source_segment(source, call_arg)
                     call['args'][index] = source_call
 
+
 def parse_folder(folder_path: str, alias: Dict[str, Union[str, None]]):
     if teamcity:
         timestamp = get_timestamp()
-        print("##teamcity[message text='Checking tokens in folder {}' status='INFO' timestamp='{}'".format(folder_path, timestamp))
+        print("##teamcity[message text='Checking tokens in folder {}' status='INFO' timestamp='{}'".format(
+            folder_path, timestamp
+            ))
     else:
         print("Checking gettext tokens in folder '{}'".format(folder_path))
     folder_calls = {}
@@ -83,10 +84,12 @@ def parse_folder(folder_path: str, alias: Dict[str, Union[str, None]]):
                 folder_calls[file_path] = file_calls
     return folder_calls
 
+
 def parse_file(file_path: str, alias: Dict[str, Union[str, None]] = {}):
     if teamcity:
         timestamp = get_timestamp()
-        print("##teamcity[message text='Checking tokens in file {}' status='INFO' timestamp='{}'".format(file_path, timestamp))
+        print("##teamcity[message text='Checking tokens in file {}' "
+              "status='INFO' timestamp='{}'".format(file_path, timestamp))
     else:
         print("Checking gettext tokens in file '{}'".format(file_path))
     with open(file_path) as f:
@@ -96,7 +99,8 @@ def parse_file(file_path: str, alias: Dict[str, Union[str, None]] = {}):
         except SyntaxError as excinfo:
             if teamcity:
                 timestamp = get_timestamp()
-                print("##teamcity[message text='Syntax error whilst parsing file |'{}|'' errorDetails='{}' status='ERROR']".format(file_path, excinfo))
+                print("##teamcity[message text='Syntax error whilst parsing file |'{}|'' "
+                      "errorDetails='{}' status='ERROR']".format(file_path, excinfo))
             else:
                 print("Syntax error in file '{}': {}".format(file_path, excinfo))
             return None

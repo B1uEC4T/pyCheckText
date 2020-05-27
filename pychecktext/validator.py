@@ -53,35 +53,42 @@ class ReportFallback(gettext.NullTranslations):
     def dnpgettext(domain: str, context: str, singular: str, plural: str, n: int) -> str:
         return (singular, "**MISSING_TRANSLATION**")
 
+
 class CheckTextTranslation(gettext.GNUTranslations, object):
     def __init__(self, *args, **kwargs):
         super(CheckTextTranslation, self).__init__(*args, **kwargs)
         self.add_fallback(ReportFallback())
+
 
 def get_translation_object(file_path: str, domain: str, languages: List[str]):
     translations = {}
     for lang in languages:
         if teamcity:
             timestamp = get_timestamp()
-            print("##teamcity[testStarted name='checkLanguageExistence.{}.{}' captureStandardOutput='false' timestamp='{}']".format(domain, lang, timestamp))
+            print("##teamcity[testStarted name='checkLanguageExistence.{}.{}' "
+                  "captureStandardOutput='false' timestamp='{}']".format(domain, lang, timestamp))
         else:
             print("Checking existence of language {} in domain '{}'".format(lang, domain))
         try:
             translations[lang] = gettext.translation(domain, file_path, [lang], class_=CheckTextTranslation)
             if teamcity:
                 timestamp = get_timestamp()
-                print("##teamcity[testFinished name='checkLanguageExistence.{}.{}' timestamp='{}']".format(domain, lang, timestamp))
+                print("##teamcity[testFinished name='checkLanguageExistence.{}.{}' "
+                      "timestamp='{}']".format(domain, lang, timestamp))
             else:
                 print("Language {} in domain '{}' found.".format(lang, domain))
         except FileNotFoundError:
             if teamcity:
                 timestamp = get_timestamp()
-                print("##teamcity[testFailed name='checkLanguageExistence.{}.{}' type='missingFile' timestamp='{}']".format(domain, lang, timestamp))
+                print("##teamcity[testFailed name='checkLanguageExistence.{}.{}' "
+                      "type='missingFile' timestamp='{}']".format(domain, lang, timestamp))
             else:
                 print("Language file {} is missing in domain '{}'".format(lang, domain))
     return translations
 
-def validate_translations(translators: Dict[str, gettext.translation], calls: Dict[str, Dict[str, List[Dict[str, Union[str, List[str]]]]]]):
+
+def validate_translations(translators: Dict[str, gettext.translation],
+                          calls: Dict[str, Dict[str, List[Dict[str, Union[str, List[str]]]]]]):
     for lang, translator in translators.items():
         plural_options = predict_plurals(translator)
         for file_name, call_objs in calls.items():
@@ -89,7 +96,9 @@ def validate_translations(translators: Dict[str, gettext.translation], calls: Di
             has_failed = False
             if teamcity:
                 timestamp = get_timestamp()
-                print("##teamcity[testStarted name='checkTokenExistence.{}.{}' captureStandardOutput='false' timestamp='{}']".format(os.path.basename(file_name), lang, timestamp))
+                print("##teamcity[testStarted name='checkTokenExistence.{}.{}' "
+                      "captureStandardOutput='false' timestamp='{}']".format(os.path.basename(file_name),
+                                                                             lang, timestamp))
             else:
                 print("Verifying tokens for language {} in file '{}'".format(lang, os.path.basename(file_name)))
             for call in literal_calls:
@@ -99,7 +108,8 @@ def validate_translations(translators: Dict[str, gettext.translation], calls: Di
                         has_failed = True
                         if teamcity:
                             timestamp = get_timestamp()
-                            print("##teamcity[message text='msgid {} is missing a translation' timestamp={}]".format(translation[0], timestamp))
+                            print("##teamcity[message text='msgid {} is missing a translation' "
+                                  "timestamp={}]".format(translation[0], timestamp))
                         else:
                             print("msgid '{}' is missing a translation in language '{}'".format(translation[0], lang))
                 else:
@@ -109,19 +119,25 @@ def validate_translations(translators: Dict[str, gettext.translation], calls: Di
                             has_failed = True
                             if teamcity:
                                 timestamp = get_timestamp()
-                                print("##teamcity[message text='msgid {} is missing a translation for plural is {}' timestamp={}]".format(translation[0], plural_options[plural_form], timestamp))
+                                print("##teamcity[message text='msgid {} is missing a translation for plural is {}' "
+                                      "timestamp={}]".format(translation[0], plural_options[plural_form], timestamp))
                             else:
-                                print("msgid '{}' is missing a translation in language '{}' for plural id {}".format(translation[0], lang, plural_options[plural_form]))
+                                print("msgid '{}' is missing a translation in language '{}' for plural id {}".format(
+                                    translation[0], lang, plural_options[plural_form]
+                                ))
             timestamp = get_timestamp()
             if teamcity:
                 if has_failed:
-                    print("##teamcity[testFailed name='checkTokenExistence.{}.{}' type='missingToken' details='Missing tokens found' timestamp='{}']".format(os.path.basename(file_name), lang, timestamp))
+                    print("##teamcity[testFailed name='checkTokenExistence.{}.{}' "
+                          "type='missingToken' details='Missing tokens found' timestamp='{}']".format(
+                              os.path.basename(file_name), lang, timestamp))
                 else:
-                    print("##teamcity[testFinished name='checkTokenExistence.{}.{}' timestamp='{}']".format(os.path.basename(file_name), lang, timestamp))
+                    print("##teamcity[testFinished name='checkTokenExistence.{}.{}' timestamp='{}']".format(
+                        os.path.basename(file_name), lang, timestamp))
 
 
 def predict_plurals(translator: gettext.translation) -> Dict[int, int]:
-    # A survey of the reported plural for examples from 
+    # A survey of the reported plural for examples from
     # 'http://docs.translatehouse.org/projects/localization-guide/en/latest/l10n/pluralforms.html'
     # Suggests that the number of required test ints is quite small
     # TODO: Verify coverage of these example

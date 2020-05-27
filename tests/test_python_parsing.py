@@ -2,22 +2,27 @@ import sys
 import pytest
 import os
 sys.path.extend('../../')
-from pychecktext.checktext_parser import parse_file
+from pychecktext.checktext_parser import parse_file  # noqa: E402
 
 # test one isntance of each named call
 
 calls = [
     ("dgettext('test', 'test.single')", "dgettext", ["test", "test.single"]),
-    ("dngettext('test', 'test.single', 'test.plural', 1)", "dngettext", ["test", "test.single", "test.plural"]),
-    ("dnpgettext('test', 'test_context', 'test.single', 'test.plural', 1)", "dnpgettext", ["test", "test_context", "test.single", "test.plural"]),
-    ("dpgettext('test', 'test_context', 'test.single')", "dpgettext", ["test", "test_context", "test.single"]),
+    ("dngettext('test', 'test.single', 'test.plural', 1)",
+     "dngettext", ["test", "test.single", "test.plural"]),
+    ("dnpgettext('test', 'test_context', 'test.single', 'test.plural', 1)",
+     "dnpgettext", ["test", "test_context", "test.single", "test.plural"]),
+    ("dpgettext('test', 'test_context', 'test.single')",
+     "dpgettext", ["test", "test_context", "test.single"]),
     ("gettext('test.single')", "gettext", ["test.single"]),
     ("ldgettext('test', 'test.single')", "ldgettext", ["test", "test.single"]),
-    ("ldngettext('test', 'test.single', 'test.plural', 1)", "ldngettext", ["test", "test.single", "test.plural"]),
+    ("ldngettext('test', 'test.single', 'test.plural', 1)",
+     "ldngettext", ["test", "test.single", "test.plural"]),
     ("lgettext('test.single')", "lgettext", ["test.single"]),
     ("lngettext('test.single', 'test.plural', 1)", "lngettext", ["test.single", "test.plural"]),
     ("ngettext('test.single', 'test.plural', 1)", "ngettext", ["test.single", "test.plural"]),
-    ("npgettext('test_context', 'test.single', 'test.plural', 1)", "npgettext", ["test_context", "test.single", "test.plural"]),
+    ("npgettext('test_context', 'test.single', 'test.plural', 1)",
+     "npgettext", ["test_context", "test.single", "test.plural"]),
     ("pgettext('test_context', 'test.single')", "pgettext", ["test_context", "test.single"])
 ]
 
@@ -25,7 +30,8 @@ complex_calls = [
     ("gettext(min(range(0,10)))", "gettext", ["min(range(0,10))"]),
     ("lgettext('test.' + domain)", "lgettext", ["'test.' + domain"]),
     ("dgettext(test, '{}.test'.format(domain))", "dgettext", ["test", "'{}.test'.format(domain)"]),
-    ("pgettext(test_context, 'my_{index}_th_token'.format(**{index: '7'}))", "pgettext", ["test_context", "'my_{index}_th_token'.format(**{index: '7'})"])
+    ("pgettext(test_context, 'my_{index}_th_token'.format(**{index: '7'}))",
+     "pgettext", ["test_context", "'my_{index}_th_token'.format(**{index: '7'})"])
 ]
 
 plural_rules = {
@@ -34,6 +40,7 @@ plural_rules = {
     'ay': {1: 0}
 }
 
+
 @pytest.fixture
 def cleanup_fixture():
     yield
@@ -41,6 +48,7 @@ def cleanup_fixture():
         os.remove('./tests/test_module/test_file.py')
     except OSError:
         pass
+
 
 @pytest.mark.parametrize("call_str, call_name, expected", calls)
 def test_single_call(cleanup_fixture, call_str, call_name, expected):
@@ -55,6 +63,7 @@ def test_single_call(cleanup_fixture, call_str, call_name, expected):
     result = calls['literal_calls'][0]
     assert result['function'] == call_name
     assert result['args'] == expected
+
 
 @pytest.mark.parametrize("call_str, call_name, expected", calls)
 def test_alias_call(cleanup_fixture, call_str, call_name, expected):
@@ -76,6 +85,7 @@ def test_alias_call(cleanup_fixture, call_str, call_name, expected):
     assert result['function'] == alias[call_name]
     assert result['args'] == expected
 
+
 @pytest.mark.parametrize("call_str, call_name, expected", calls)
 def test_multiple_call(cleanup_fixture, call_str, call_name, expected):
     with open('./tests/test_artifacts/multiplicate_call_template.py', 'r') as f:
@@ -89,6 +99,7 @@ def test_multiple_call(cleanup_fixture, call_str, call_name, expected):
     for call in calls['literal_calls']:
         assert call['function'] == call_name
         assert call['args'] == expected
+
 
 def test_multiple_tokens(cleanup_fixture):
     import re
@@ -108,6 +119,7 @@ def test_multiple_tokens(cleanup_fixture):
         current_call = list(map(itemgetter(1), calls)).index(call['function'])
         assert call['args'] == calls[current_call][2]
 
+
 def test_invalid_syntax(cleanup_fixture, capsys):
     with open('./tests/test_artifacts/single_call_template.py', 'r') as f:
         test_file = f.readlines()
@@ -123,6 +135,7 @@ def test_invalid_syntax(cleanup_fixture, capsys):
     assert "Syntax error" in std_out[1]
     assert "test_file.py" in std_out[1]
     assert "unmatched ')'" in std_out[1]
+
 
 @pytest.mark.parametrize("call_str, call_name, expected", complex_calls)
 def test_complex_call(cleanup_fixture, call_str, call_name, expected):

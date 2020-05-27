@@ -12,8 +12,8 @@ setup(
    author='Doug Addy',
    author_email='da1910@protonmail.com',
    url="https://github.com/da1910/pyCheckText",
-   packages=['pychecktext'],  #same as name
-   install_requires=[], #external packages as dependencies
+   packages=['pychecktext'],  # same as name
+   install_requires=[],  # external packages as dependencies
    scripts=[
             'scripts/checktext.py',
            ]
