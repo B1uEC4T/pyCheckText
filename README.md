@@ -1,9 +1,9 @@
-#pyCheckText
-##Requirements
+# pyCheckText
+## Requirements
 * Python 3.8
 * python-dateutil
 
-##Invocation
+## Invocation
 Run /scripts/checktext.py, arguments are as follows
 * --folder_path Path to a folder, check all python files within the folder
 * --file_path Path to a single python file which will be checked
