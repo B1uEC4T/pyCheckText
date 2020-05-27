@@ -21,15 +21,17 @@ calls = [
     ("pgettext('test_context', 'test.single')", "pgettext", ["test_context", "test.single"])
 ]
 
+complex_calls = [
+    ("gettext(min(range(0,10)))", "gettext", ["min(range(0,10))"]),
+    ("lgettext('test.' + domain)", "lgettext", ["'test.' + domain"]),
+    ("dgettext(test, '{}.test'.format(domain))", "dgettext", ["test", "'{}.test'.format(domain)"]),
+    ("pgettext(test_context, 'my_{index}_th_token'.format(**{index: '7'}))", "pgettext", ["test_context", "'my_{index}_th_token'.format(**{index: '7'})"])
+]
+
 plural_rules = {
     'en': {1: 0, 2: 1},
     'ar': {0: 0, 1: 1, 2: 2, 4: 3, 110: 4, 114: 5},
     'ay': {1: 0}
-}
-
-expected_translations = {
-    'test.single': 'singular',
-    'test.plural': 'plural'
 }
 
 @pytest.fixture
@@ -48,7 +50,6 @@ def test_single_call(cleanup_fixture, call_str, call_name, expected):
             test_file[line_no] = line.replace('{call}', call_str)
     with open('./tests/test_module/test_file.py', 'w') as f:
         f.writelines(test_file)
-
     calls = parse_file('./tests/test_module/test_file.py')
     assert len(calls['literal_calls']) == 1
     result = calls['literal_calls'][0]
@@ -69,7 +70,6 @@ def test_alias_call(cleanup_fixture, call_str, call_name, expected):
             test_file[line_no] = line.replace('{call}', call_str)
     with open('./tests/test_module/test_file.py', 'w') as f:
         f.writelines(test_file)
-
     calls = parse_file('./tests/test_module/test_file.py', alias=alias)
     assert len(calls['literal_calls']) == 1
     result = calls['literal_calls'][0]
@@ -84,7 +84,6 @@ def test_multiple_call(cleanup_fixture, call_str, call_name, expected):
             test_file[line_no] = line.replace('{call}', call_str)
     with open('./tests/test_module/test_file.py', 'w') as f:
         f.writelines(test_file)
-
     calls = parse_file('./tests/test_module/test_file.py')
     assert len(calls['literal_calls']) == 4
     for call in calls['literal_calls']:
@@ -102,7 +101,6 @@ def test_multiple_tokens(cleanup_fixture):
                 test_file[line_no] = line.replace(call_token.group(0), calls[int(call_token.group(1))][0])
     with open('./tests/test_module/test_file.py', 'w') as f:
         f.writelines(test_file)
-
     parsed_calls = parse_file('./tests/test_module/test_file.py')
     assert len(parsed_calls['literal_calls']) == 10
     for call in parsed_calls['literal_calls']:
@@ -110,6 +108,33 @@ def test_multiple_tokens(cleanup_fixture):
         current_call = list(map(itemgetter(1), calls)).index(call['function'])
         assert call['args'] == calls[current_call][2]
 
-# test invalid python
+def test_invalid_syntax(cleanup_fixture, capsys):
+    with open('./tests/test_artifacts/single_call_template.py', 'r') as f:
+        test_file = f.readlines()
+    with open('./tests/test_module/test_file.py', 'w') as f:
+        for line_no, line in enumerate(test_file):
+            test_file[line_no] = line.replace('{call}', '):')
+        f.writelines(test_file)
+    calls = parse_file('./tests/test_module/test_file.py')
+    captured = capsys.readouterr()
+    assert calls is None
+    std_out = captured[0].splitlines()
+    assert len(std_out) == 2
+    assert "Syntax error" in std_out[1]
+    assert "test_file.py" in std_out[1]
+    assert "unmatched ')'" in std_out[1]
 
-# test complex call
+@pytest.mark.parametrize("call_str, call_name, expected", complex_calls)
+def test_complex_call(cleanup_fixture, call_str, call_name, expected):
+    with open('./tests/test_artifacts/single_call_template.py', 'r') as f:
+        test_file = f.readlines()
+        for line_no, line in enumerate(test_file):
+            test_file[line_no] = line.replace('{call}', call_str)
+    with open('./tests/test_module/test_file.py', 'w') as f:
+        f.writelines(test_file)
+    calls = parse_file('./tests/test_module/test_file.py')
+    assert len(calls['literal_calls']) == 0
+    assert len(calls['complex_calls']) == 1
+    result = calls['complex_calls'][0]
+    assert result['function'] == call_name
+    assert result['args'] == expected

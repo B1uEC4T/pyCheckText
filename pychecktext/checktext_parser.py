@@ -91,7 +91,15 @@ def parse_file(file_path: str, alias: Dict[str, Union[str, None]] = {}):
         print("Checking gettext tokens in file '{}'".format(file_path))
     with open(file_path) as f:
         data = f.read()
-        tree = ast.parse(data)
+        try:
+            tree = ast.parse(data)
+        except SyntaxError as excinfo:
+            if teamcity:
+                timestamp = get_timestamp()
+                print("##teamcity[message text='Syntax error whilst parsing file |'{}|'' errorDetails='{}' status='ERROR']".format(file_path, excinfo))
+            else:
+                print("Syntax error in file '{}': {}".format(file_path, excinfo))
+            return None
         treeVisitor = CheckTextVisitor(alias)
         treeVisitor.visit(tree)
         treeVisitor.process_calls(data)

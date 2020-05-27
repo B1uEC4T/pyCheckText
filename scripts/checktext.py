@@ -1,7 +1,8 @@
 import argparse
+import sys
+sys.path.extend('..')
 from pychecktext import teamcity, get_timestamp
-import checktext_parser
-import validator
+from pychecktext import checktext_parser, validator
 
 parser = argparse.ArgumentParser(description='pyCheckText Argument Parser')
 parser.add_argument_group('File path')
