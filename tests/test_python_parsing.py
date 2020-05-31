@@ -47,7 +47,7 @@ def test_single_call(cleanup_fixture, call_str, call_name, expected):
         test_file = f.readlines()
         for line_no, line in enumerate(test_file):
             test_file[line_no] = line.replace('{call}', call_str)
-    with open('./tests/test_module/test_file.py', 'w') as f:
+    with open('./tests/test_module/test_file.py', 'w+') as f:
         f.writelines(test_file)
     calls = parse_file('./tests/test_module/test_file.py')
     assert len(calls['literal_calls']) == 1
@@ -68,7 +68,7 @@ def test_alias_call(cleanup_fixture, call_str, call_name, expected):
         test_file = f.readlines()
         for line_no, line in enumerate(test_file):
             test_file[line_no] = line.replace('{call}', call_str)
-    with open('./tests/test_module/test_file.py', 'w') as f:
+    with open('./tests/test_module/test_file.py', 'w+') as f:
         f.writelines(test_file)
     calls = parse_file('./tests/test_module/test_file.py', alias=alias)
     assert len(calls['literal_calls']) == 1
@@ -83,7 +83,7 @@ def test_multiple_call(cleanup_fixture, call_str, call_name, expected):
         test_file = f.readlines()
         for line_no, line in enumerate(test_file):
             test_file[line_no] = line.replace('{call}', call_str)
-    with open('./tests/test_module/test_file.py', 'w') as f:
+    with open('./tests/test_module/test_file.py', 'w+') as f:
         f.writelines(test_file)
     calls = parse_file('./tests/test_module/test_file.py')
     assert len(calls['literal_calls']) == 4
@@ -101,7 +101,7 @@ def test_multiple_tokens(cleanup_fixture):
             call_token = re.search(r"{call_([\d])}", line)
             if call_token:
                 test_file[line_no] = line.replace(call_token.group(0), calls[int(call_token.group(1))][0])
-    with open('./tests/test_module/test_file.py', 'w') as f:
+    with open('./tests/test_module/test_file.py', 'w+') as f:
         f.writelines(test_file)
     parsed_calls = parse_file('./tests/test_module/test_file.py')
     assert len(parsed_calls['literal_calls']) == 10
@@ -114,7 +114,7 @@ def test_multiple_tokens(cleanup_fixture):
 def test_invalid_syntax(cleanup_fixture, capsys):
     with open('./tests/test_artifacts/single_call_template.py', 'r') as f:
         test_file = f.readlines()
-    with open('./tests/test_module/test_file.py', 'w') as f:
+    with open('./tests/test_module/test_file.py', 'w+') as f:
         for line_no, line in enumerate(test_file):
             test_file[line_no] = line.replace('{call}', '):')
         f.writelines(test_file)
@@ -134,7 +134,7 @@ def test_complex_call(cleanup_fixture, call_str, call_name, expected):
         test_file = f.readlines()
         for line_no, line in enumerate(test_file):
             test_file[line_no] = line.replace('{call}', call_str)
-    with open('./tests/test_module/test_file.py', 'w') as f:
+    with open('./tests/test_module/test_file.py', 'w+') as f:
         f.writelines(test_file)
     calls = parse_file('./tests/test_module/test_file.py')
     assert len(calls['literal_calls']) == 0
