@@ -17,6 +17,14 @@ msgstr "You must cut down the mightiest tree in the forest with... a herring!"
 msgid "repression"
 msgstr "Come and see the violence inherent in the system. Help! Help! I'm being repressed."
 
+msgid "blank"
+msgstr ""
+
+msgid "swallow_singular"
+msgid_plural "swallow_plural"
+msgstr[0] "How do you know so much about a swallow?"
+msgstr[1] "How do you know so much about swallows?"
+
 msgctxt "female"
 msgid "french_singular"
 msgid_plural "french_plural"
@@ -28,11 +36,6 @@ msgid "french_singular"
 msgid_plural "french_plural"
 msgstr[0] "Your father smelled of elderberries!"
 msgstr[1] "Your fathers smelled of elderberries!"
-
-msgid "swallow_singular"
-msgid_plural "swallow_plural"
-msgstr[0] "How do you know so much about a swallow?"
-msgstr[1] "How do you know so much about swallows?"
 
 msgctxt "polite"
 msgid "parrot"

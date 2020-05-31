@@ -1,1 +1,2 @@
 python-dateutil==2.8.1
+teamcity-messages==1.28

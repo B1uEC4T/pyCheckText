@@ -48,7 +48,8 @@ def copy_languages(languages: List[str]):
 @pytest.mark.parametrize('languages', all_combinations(supported_languages))
 def test_get_translations(cleanup_fixture, languages: List[str]):
     copy_languages(languages)
-    output = get_translation_object("./tests/test_module/locale", "test", languages)
+    output = get_translation_object("./tests/test_module/locale",
+                                    "test", languages)
     assert len(output) == len(languages)
     for lang, translator in output.items():
         assert isinstance(translator, gettext.GNUTranslations)
@@ -58,7 +59,8 @@ def test_get_translations(cleanup_fixture, languages: List[str]):
 
 def test_get_translations_missing(capsys, cleanup_fixture):
     copy_languages(['ar', 'ay'])
-    output = get_translation_object("./tests/test_module/locale", "test", ['ar', 'ay', 'en'])
+    output = get_translation_object("./tests/test_module/locale",
+                                    "test", ['ar', 'ay', 'en'])
     stdout = capsys.readouterr().out
     assert len(output) == 2
     assert "Language file en is missing in domain 'test'" in stdout
@@ -66,6 +68,7 @@ def test_get_translations_missing(capsys, cleanup_fixture):
         assert isinstance(translator, gettext.GNUTranslations)
         info = translator.info()
         assert info['language'] == lang
+
 
 test_calls = [
     {
@@ -115,16 +118,70 @@ test_calls = [
     }
 ]
 
+
 @pytest.mark.parametrize("call", test_calls)
-def test_valid_translations(english_fixture, cleanup_fixture, capsys, call: Dict[str, Union[str, List[str]]]):
+def test_valid_translations(english_fixture,
+                            cleanup_fixture,
+                            capsys,
+                            call: Dict[str, Union[str, List[str]]]):
     translators = english_fixture
-    validate_translations(translators, {'test.py':{'literal_calls': [call]}})
+    validate_translations(translators, {'test.py': {'literal_calls': [call]}})
     outputs = capsys.readouterr()
     stdout = outputs.out.splitlines()
     stderr = outputs.err
     assert stderr == ''
     assert len(stdout) == 1
 
+
+def test_missing_context(english_fixture,
+                         cleanup_fixture,
+                         capsys):
+    call = {
+        "function": "pgettext",
+        "args": ["downright_rude", "parrot"]
+    }
+    translators = english_fixture
+    validate_translations(translators, {'test.py': {'literal_calls': [call]}})
+    outputs = capsys.readouterr()
+    stdout = outputs.out.splitlines()
+    stderr = outputs.err
+    assert stderr == ''
+    assert len(stdout) == 2
+    assert all(test in stdout[1] for test in ['parrot', 'en'])
+
+
+def test_missing_translation(english_fixture,
+                             cleanup_fixture,
+                             capsys):
+    call = {
+        "function": "gettext",
+        "args": ["blank"]
+    }
+    translators = english_fixture
+    validate_translations(translators, {'test.py': {'literal_calls': [call]}})
+    outputs = capsys.readouterr()
+    stdout = outputs.out.splitlines()
+    stderr = outputs.err
+    assert stderr == ''
+    assert len(stdout) == 2
+    assert all(test in stdout[1] for test in ['blank', 'en'])
+
+
+def test_missing_msgid(english_fixture,
+                       cleanup_fixture,
+                       capsys):
+    call = {
+        "function": "gettext",
+        "args": ["not_the_messiah"]
+    }
+    translators = english_fixture
+    validate_translations(translators, {'test.py': {'literal_calls': [call]}})
+    outputs = capsys.readouterr()
+    stdout = outputs.out.splitlines()
+    stderr = outputs.err
+    assert stderr == ''
+    assert len(stdout) == 2
+    assert all(test in stdout[1] for test in ['not_the_messiah', 'en'])
 
 # missing single translation
 

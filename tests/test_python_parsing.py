@@ -45,20 +45,20 @@ plural_rules = {
 def cleanup_fixture():
     yield
     try:
-        os.remove('./test_module/test_file.py')
+        os.remove('./tests/test_module/test_file.py')
     except OSError:
         pass
 
 
 @pytest.mark.parametrize("call_str, call_name, expected", calls)
 def test_single_call(cleanup_fixture, call_str, call_name, expected):
-    with open('./test_artifacts/single_call_template.py', 'r') as f:
+    with open('./tests/test_artifacts/single_call_template.py', 'r') as f:
         test_file = f.readlines()
         for line_no, line in enumerate(test_file):
             test_file[line_no] = line.replace('{call}', call_str)
-    with open('./test_module/test_file.py', 'w') as f:
+    with open('./tests/test_module/test_file.py', 'w') as f:
         f.writelines(test_file)
-    calls = parse_file('./test_module/test_file.py')
+    calls = parse_file('./tests/test_module/test_file.py')
     assert len(calls['literal_calls']) == 1
     result = calls['literal_calls'][0]
     assert result['function'] == call_name
@@ -69,7 +69,7 @@ def test_single_call(cleanup_fixture, call_str, call_name, expected):
 def test_alias_call(cleanup_fixture, call_str, call_name, expected):
     import string
     import random
-    with open('./test_artifacts/single_call_template.py', 'r') as f:
+    with open('./tests/test_artifacts/single_call_template.py', 'r') as f:
         random = ''.join(random.choice(string.ascii_letters) for _ in range(6))
         alias = {random: call_name}
         call_str = call_str.replace(call_name, random)
@@ -77,9 +77,9 @@ def test_alias_call(cleanup_fixture, call_str, call_name, expected):
         test_file = f.readlines()
         for line_no, line in enumerate(test_file):
             test_file[line_no] = line.replace('{call}', call_str)
-    with open('./test_module/test_file.py', 'w') as f:
+    with open('./tests/test_module/test_file.py', 'w') as f:
         f.writelines(test_file)
-    calls = parse_file('./test_module/test_file.py', alias=alias)
+    calls = parse_file('./tests/test_module/test_file.py', alias=alias)
     assert len(calls['literal_calls']) == 1
     result = calls['literal_calls'][0]
     assert result['function'] == alias[call_name]
@@ -88,13 +88,13 @@ def test_alias_call(cleanup_fixture, call_str, call_name, expected):
 
 @pytest.mark.parametrize("call_str, call_name, expected", calls)
 def test_multiple_call(cleanup_fixture, call_str, call_name, expected):
-    with open('./test_artifacts/multiplicate_call_template.py', 'r') as f:
+    with open('./tests/test_artifacts/multiplicate_call_template.py', 'r') as f:
         test_file = f.readlines()
         for line_no, line in enumerate(test_file):
             test_file[line_no] = line.replace('{call}', call_str)
-    with open('./test_module/test_file.py', 'w') as f:
+    with open('./tests/test_module/test_file.py', 'w') as f:
         f.writelines(test_file)
-    calls = parse_file('./test_module/test_file.py')
+    calls = parse_file('./tests/test_module/test_file.py')
     assert len(calls['literal_calls']) == 4
     for call in calls['literal_calls']:
         assert call['function'] == call_name
@@ -104,15 +104,15 @@ def test_multiple_call(cleanup_fixture, call_str, call_name, expected):
 def test_multiple_tokens(cleanup_fixture):
     import re
     from operator import itemgetter
-    with open('./test_artifacts/multiple_token_template.py', 'r') as f:
+    with open('./tests/test_artifacts/multiple_token_template.py', 'r') as f:
         test_file = f.readlines()
         for line_no, line in enumerate(test_file):
             call_token = re.search(r"{call_([\d])}", line)
             if call_token:
                 test_file[line_no] = line.replace(call_token.group(0), calls[int(call_token.group(1))][0])
-    with open('./test_module/test_file.py', 'w') as f:
+    with open('./tests/test_module/test_file.py', 'w') as f:
         f.writelines(test_file)
-    parsed_calls = parse_file('./test_module/test_file.py')
+    parsed_calls = parse_file('./tests/test_module/test_file.py')
     assert len(parsed_calls['literal_calls']) == 10
     for call in parsed_calls['literal_calls']:
         assert call['function'] in [function[1] for function in calls]
@@ -121,13 +121,13 @@ def test_multiple_tokens(cleanup_fixture):
 
 
 def test_invalid_syntax(cleanup_fixture, capsys):
-    with open('./test_artifacts/single_call_template.py', 'r') as f:
+    with open('./tests/test_artifacts/single_call_template.py', 'r') as f:
         test_file = f.readlines()
-    with open('./test_module/test_file.py', 'w') as f:
+    with open('./tests/test_module/test_file.py', 'w') as f:
         for line_no, line in enumerate(test_file):
             test_file[line_no] = line.replace('{call}', '):')
         f.writelines(test_file)
-    calls = parse_file('./test_module/test_file.py')
+    calls = parse_file('./tests/test_module/test_file.py')
     captured = capsys.readouterr()
     assert calls is None
     std_out = captured[0].splitlines()
@@ -139,13 +139,13 @@ def test_invalid_syntax(cleanup_fixture, capsys):
 
 @pytest.mark.parametrize("call_str, call_name, expected", complex_calls)
 def test_complex_call(cleanup_fixture, call_str, call_name, expected):
-    with open('./test_artifacts/single_call_template.py', 'r') as f:
+    with open('./tests/test_artifacts/single_call_template.py', 'r') as f:
         test_file = f.readlines()
         for line_no, line in enumerate(test_file):
             test_file[line_no] = line.replace('{call}', call_str)
-    with open('./test_module/test_file.py', 'w') as f:
+    with open('./tests/test_module/test_file.py', 'w') as f:
         f.writelines(test_file)
-    calls = parse_file('./test_module/test_file.py')
+    calls = parse_file('./tests/test_module/test_file.py')
     assert len(calls['literal_calls']) == 0
     assert len(calls['complex_calls']) == 1
     result = calls['complex_calls'][0]

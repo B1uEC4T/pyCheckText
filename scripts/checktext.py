@@ -26,8 +26,7 @@ if args.alias is not None:
         alias_dict[alias] = built_in
 
 if teamcity:
-    timestamp = get_timestamp()
-    print("##teamcity[testSuiteStarted name='checkGettextTokens' timestamp='{}'".format(timestamp))
+    teamcity_messages.testSuiteStarted("checkGetTextTokens")
 else:
     print("Validating gettext tokens")
 if args.folder_path is not None:
@@ -39,3 +38,4 @@ else:
 
 translation_objs = validator.get_translation_object(args.translation_path, args.domain, args.languages[0])
 validator.validate_translations(translation_objs, calls)
+teamcity_messages.testSuiteFinished("checkGetTextTokens")

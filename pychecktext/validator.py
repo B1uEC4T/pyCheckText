@@ -98,7 +98,7 @@ def validate_translations(translators: Dict[str, gettext.translation],
             for call in literal_calls:
                 if call['function'] in ['gettext', 'dgettext', 'pgettext', 'dpgettext', 'lgettext', 'ldgettext']:
                     translation = getattr(translator, call['function'])(*call['args'])
-                    if isinstance(translation, tuple):
+                    if isinstance(translation, tuple) or translation == '':
                         has_failed = True
                         if teamcity:
                             teamcity_messages.customMessage('msgid {} is missing a translation'.format(translation[0]), 
