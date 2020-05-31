@@ -88,7 +88,7 @@ def parse_file(file_path: str, alias: Dict[str, Union[str, None]] = {}):
             status='INFO', errorDetails=None)
     else:
         print("Checking gettext tokens in file '{}'".format(file_path))
-    with open(file_path) as f:
+    with open(file_path, 'r') as f:
         data = f.read()
         try:
             tree = ast.parse(data)

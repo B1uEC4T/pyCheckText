@@ -39,7 +39,7 @@ def copy_languages(languages: List[str]):
 
 
 @pytest.mark.parametrize('languages', all_combinations(supported_languages))
-def test_get_translations(cleanup_fixture, languages: List[str]):
+def test_get_translations(cleanup_locale_fixture, languages: List[str]):
     copy_languages(languages)
     output = get_translation_object("./tests/test_module/locale",
                                     "test", languages)
@@ -50,7 +50,7 @@ def test_get_translations(cleanup_fixture, languages: List[str]):
         assert info['language'] == lang
 
 
-def test_get_translations_missing(capsys, cleanup_fixture):
+def test_get_translations_missing(capsys, cleanup_locale_fixture):
     copy_languages(['ar', 'ay'])
     output = get_translation_object("./tests/test_module/locale",
                                     "test", ['ar', 'ay', 'en'])
@@ -114,7 +114,7 @@ test_calls = [
 
 @pytest.mark.parametrize("call", test_calls)
 def test_valid_translations(english_fixture,
-                            cleanup_fixture,
+                            cleanup_locale_fixture,
                             capsys,
                             call: Dict[str, Union[str, List[str]]]):
     translators = english_fixture
@@ -127,7 +127,7 @@ def test_valid_translations(english_fixture,
 
 
 def test_missing_context(english_fixture,
-                         cleanup_fixture,
+                         cleanup_locale_fixture,
                          capsys):
     call = {
         "function": "pgettext",
@@ -144,7 +144,7 @@ def test_missing_context(english_fixture,
 
 
 def test_missing_translation(english_fixture,
-                             cleanup_fixture,
+                             cleanup_locale_fixture,
                              capsys):
     call = {
         "function": "gettext",
@@ -161,7 +161,7 @@ def test_missing_translation(english_fixture,
 
 
 def test_missing_msgid(english_fixture,
-                       cleanup_fixture,
+                       cleanup_locale_fixture,
                        capsys):
     call = {
         "function": "gettext",
