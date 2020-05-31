@@ -1,5 +1,5 @@
 # pyCheckText
-![flake8](https://github.com/da1910/pyCheckText/workflows/flake8/badge.svg)
+![flake8](https://github.com/da1910/pyCheckText/workflows/flake8/badge.svg) ![Tox](https://github.com/da1910/pyCheckText/workflows/Tox/badge.svg)
 ## Requirements
 * Python 3.8
 * python-dateutil
