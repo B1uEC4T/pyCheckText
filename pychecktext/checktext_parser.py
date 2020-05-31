@@ -2,7 +2,7 @@ import _ast
 import ast
 from typing import Dict, Union
 import os
-from pychecktext import teamcity, get_timestamp
+from pychecktext import teamcity, get_timestamp, teamcity_messages
 
 
 class CheckTextVisitor(ast.NodeVisitor):
@@ -69,10 +69,7 @@ class CheckTextVisitor(ast.NodeVisitor):
 
 def parse_folder(folder_path: str, alias: Dict[str, Union[str, None]]):
     if teamcity:
-        timestamp = get_timestamp()
-        print("##teamcity[message text='Checking tokens in folder {}' status='INFO' timestamp='{}'".format(
-            folder_path, timestamp
-            ))
+        teamcity_messages.customMessage('Checking tokens in folder {}'.format(folder_path), status='INFO', errorDetails=None)
     else:
         print("Checking gettext tokens in folder '{}'".format(folder_path))
     folder_calls = {}
@@ -87,9 +84,8 @@ def parse_folder(folder_path: str, alias: Dict[str, Union[str, None]]):
 
 def parse_file(file_path: str, alias: Dict[str, Union[str, None]] = {}):
     if teamcity:
-        timestamp = get_timestamp()
-        print("##teamcity[message text='Checking tokens in file {}' "
-              "status='INFO' timestamp='{}'".format(file_path, timestamp))
+        teamcity_messages.customMessage('Checking tokens in file {}'.format(file_path),
+            status='INFO', errorDetails=None)
     else:
         print("Checking gettext tokens in file '{}'".format(file_path))
     with open(file_path) as f:
@@ -98,9 +94,8 @@ def parse_file(file_path: str, alias: Dict[str, Union[str, None]] = {}):
             tree = ast.parse(data)
         except SyntaxError as excinfo:
             if teamcity:
-                timestamp = get_timestamp()
-                print("##teamcity[message text='Syntax error whilst parsing file |'{}|'' "
-                      "errorDetails='{}' status='ERROR']".format(file_path, excinfo))
+                teamcity_messages.customMessage("Syntax error whilst parsing file '{}'",
+                    status="ERROR", errorDetails=excinfo)
             else:
                 print("Syntax error in file '{}': {}".format(file_path, excinfo))
             return None

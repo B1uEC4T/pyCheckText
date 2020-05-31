@@ -1,5 +1,5 @@
 from typing import List, Dict, Union
-from pychecktext import teamcity, get_timestamp
+from pychecktext import teamcity, get_timestamp, teamcity_messages
 import gettext
 import os
 
@@ -64,24 +64,20 @@ def get_translation_object(file_path: str, domain: str, languages: List[str]):
     translations = {}
     for lang in languages:
         if teamcity:
-            timestamp = get_timestamp()
-            print("##teamcity[testStarted name='checkLanguageExistence.{}.{}' "
-                  "captureStandardOutput='false' timestamp='{}']".format(domain, lang, timestamp))
+            teamcity_messages.testStarted('checkLanguageExistence.{}.{}'.format(domain, lang),
+                captureStandardOutput=False)
         else:
             print("Checking existence of language {} in domain '{}'".format(lang, domain))
         try:
             translations[lang] = gettext.translation(domain, file_path, [lang], class_=CheckTextTranslation)
             if teamcity:
-                timestamp = get_timestamp()
-                print("##teamcity[testFinished name='checkLanguageExistence.{}.{}' "
-                      "timestamp='{}']".format(domain, lang, timestamp))
+                teamcity_messages.testFinished('checkLanguageExistence.{}.{}'.format(domain, lang))
             else:
                 print("Language {} in domain '{}' found.".format(lang, domain))
         except FileNotFoundError:
             if teamcity:
-                timestamp = get_timestamp()
-                print("##teamcity[testFailed name='checkLanguageExistence.{}.{}' "
-                      "type='missingFile' timestamp='{}']".format(domain, lang, timestamp))
+                teamcity_messages.testFailed('checkLanguageExistence.{}.{}'.format(domain, lang), 
+                    message="Language file {0}.mo for language {1} is missing.".format(domain, lang))
             else:
                 print("Language file {} is missing in domain '{}'".format(lang, domain))
     return translations
@@ -95,10 +91,8 @@ def validate_translations(translators: Dict[str, gettext.translation],
             literal_calls = call_objs['literal_calls']
             has_failed = False
             if teamcity:
-                timestamp = get_timestamp()
-                print("##teamcity[testStarted name='checkTokenExistence.{}.{}' "
-                      "captureStandardOutput='false' timestamp='{}']".format(os.path.basename(file_name),
-                                                                             lang, timestamp))
+                teamcity_messages.testStarted('checkTokenExistence({}, {})'.format(os.path.basename(file_name), lang), 
+                    captureStandardOutput=False)
             else:
                 print("Verifying tokens for language {} in file '{}'".format(lang, os.path.basename(file_name)))
             for call in literal_calls:
@@ -107,9 +101,8 @@ def validate_translations(translators: Dict[str, gettext.translation],
                     if isinstance(translation, tuple):
                         has_failed = True
                         if teamcity:
-                            timestamp = get_timestamp()
-                            print("##teamcity[message text='msgid {} is missing a translation' "
-                                  "timestamp={}]".format(translation[0], timestamp))
+                            teamcity_messages.customMessage('msgid {} is missing a translation'.format(translation[0]), 
+                                status='FAILURE')
                         else:
                             print("msgid '{}' is missing a translation in language '{}'".format(translation[0], lang))
                 else:
@@ -118,9 +111,9 @@ def validate_translations(translators: Dict[str, gettext.translation],
                         if isinstance(translation, tuple):
                             has_failed = True
                             if teamcity:
-                                timestamp = get_timestamp()
-                                print("##teamcity[message text='msgid {} is missing a translation for plural is {}' "
-                                      "timestamp={}]".format(translation[0], plural_options[plural_form], timestamp))
+                                teamcity_messages.customMessage('msgid {0} is missing a translation '
+                                                                'for plural id {1}'.format(translation[0], 
+                                                                plural_options[plural_form]), status='FAILURE')                                      
                             else:
                                 print("msgid '{}' is missing a translation in language '{}' for plural id {}".format(
                                     translation[0], lang, plural_options[plural_form]
@@ -128,12 +121,11 @@ def validate_translations(translators: Dict[str, gettext.translation],
             timestamp = get_timestamp()
             if teamcity:
                 if has_failed:
-                    print("##teamcity[testFailed name='checkTokenExistence.{}.{}' "
-                          "type='missingToken' details='Missing tokens found' timestamp='{}']".format(
-                              os.path.basename(file_name), lang, timestamp))
+                    teamcity_messages.testFailed('checkTokenExistence({}, {})'.format(os.path.basename(file_name), 
+                                                                                      lang), "Missing tokens found")
                 else:
-                    print("##teamcity[testFinished name='checkTokenExistence.{}.{}' timestamp='{}']".format(
-                        os.path.basename(file_name), lang, timestamp))
+                    teamcity_messages.testFinished('checkTokenExistence({}, {})'.format(os.path.basename(file_name), 
+                                                                                      lang))
 
 
 def predict_plurals(translator: gettext.translation) -> Dict[int, int]:

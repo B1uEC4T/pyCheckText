@@ -1,5 +1,6 @@
 import datetime
 from dateutil import tz
+import teamcity as tc
 
 try:
     from teamcity import is_running_under_teamcity
@@ -14,3 +15,5 @@ except ImportError:
 def get_timestamp():
     timestamp = datetime.datetime.now(tz=tz.tzlocal()).strftime('%Y-%M-%dT%X.%f%z')
     return timestamp
+
+teamcity_messages = tc.messages.TeamcityServiceMessages()

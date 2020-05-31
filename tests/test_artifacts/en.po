@@ -8,6 +8,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=cp1252\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
 "Plural-Forms: nplurals=2; plural=n != 1;"
 
 msgid "herring"
@@ -40,4 +41,3 @@ msgstr "He has expired and gone to meet his maker."
 msgctxt "impolite"
 msgid "parrot"
 msgstr "He's run down the curtain and joined the bleeding choir invisible."
-
