@@ -1,5 +1,5 @@
 from typing import List, Dict, Union
-from pychecktext import teamcity, get_timestamp, teamcity_messages
+from pychecktext import teamcity, teamcity_messages
 import gettext
 import os
 
@@ -65,19 +65,22 @@ def get_translation_object(file_path: str, domain: str, languages: List[str]):
     for lang in languages:
         if teamcity:
             teamcity_messages.testStarted('checkLanguageExistence.{}.{}'.format(domain, lang),
-                captureStandardOutput=False)
+                                          captureStandardOutput=False)
         else:
-            print("Checking existence of language {} in domain '{}'".format(lang, domain))
+            print("Checking existence of language {} in domain '{}'".format(
+                lang, domain))
         try:
-            translations[lang] = gettext.translation(domain, file_path, [lang], class_=CheckTextTranslation)
+            translations[lang] = gettext.translation(
+                domain, file_path, [lang], class_=CheckTextTranslation)
             if teamcity:
-                teamcity_messages.testFinished('checkLanguageExistence.{}.{}'.format(domain, lang))
+                teamcity_messages.testFinished(
+                    'checkLanguageExistence.{}.{}'.format(domain, lang))
             else:
                 print("Language {} in domain '{}' found.".format(lang, domain))
         except FileNotFoundError:
             if teamcity:
-                teamcity_messages.testFailed('checkLanguageExistence.{}.{}'.format(domain, lang), 
-                    message="Language file {0}.mo for language {1} is missing.".format(domain, lang))
+                teamcity_messages.testFailed('checkLanguageExistence.{}.{}'.format(domain, lang),
+                                             message="Language file {0}.mo for language {1} is missing.".format(domain, lang))
             else:
                 print("Language file {} is missing in domain '{}'".format(lang, domain))
     return translations
@@ -91,41 +94,44 @@ def validate_translations(translators: Dict[str, gettext.translation],
             literal_calls = call_objs['literal_calls']
             has_failed = False
             if teamcity:
-                teamcity_messages.testStarted('checkTokenExistence({}, {})'.format(os.path.basename(file_name), lang), 
-                    captureStandardOutput=False)
+                teamcity_messages.testStarted('checkTokenExistence({}, {})'.format(os.path.basename(file_name), lang),
+                                              captureStandardOutput=False)
             else:
-                print("Verifying tokens for language {} in file '{}'".format(lang, os.path.basename(file_name)))
+                print("Verifying tokens for language {} in file '{}'".format(
+                    lang, os.path.basename(file_name)))
             for call in literal_calls:
                 if call['function'] in ['gettext', 'dgettext', 'pgettext', 'dpgettext', 'lgettext', 'ldgettext']:
-                    translation = getattr(translator, call['function'])(*call['args'])
+                    translation = getattr(
+                        translator, call['function'])(*call['args'])
                     if isinstance(translation, tuple) or translation == '':
                         has_failed = True
                         if teamcity:
-                            teamcity_messages.customMessage('msgid {} is missing a translation'.format(translation[0]), 
-                                status='FAILURE')
+                            teamcity_messages.customMessage('msgid {} is missing a translation'.format(translation[0]),
+                                                            status='FAILURE')
                         else:
-                            print("msgid '{}' is missing a translation in language '{}'".format(translation[0], lang))
+                            print("msgid '{}' is missing a translation in language '{}'".format(
+                                translation[0], lang))
                 else:
                     for plural_form in plural_options:
-                        translation = getattr(translator, call['function'])(*call['args'], plural_form)
+                        translation = getattr(translator, call['function'])(
+                            *call['args'], plural_form)
                         if isinstance(translation, tuple):
                             has_failed = True
                             if teamcity:
                                 teamcity_messages.customMessage('msgid {0} is missing a translation '
-                                                                'for plural id {1}'.format(translation[0], 
-                                                                plural_options[plural_form]), status='FAILURE')                                      
+                                                                'for plural id {1}'.format(translation[0],
+                                                                                           plural_options[plural_form]), status='FAILURE')
                             else:
                                 print("msgid '{}' is missing a translation in language '{}' for plural id {}".format(
                                     translation[0], lang, plural_options[plural_form]
                                 ))
-            timestamp = get_timestamp()
             if teamcity:
                 if has_failed:
-                    teamcity_messages.testFailed('checkTokenExistence({}, {})'.format(os.path.basename(file_name), 
+                    teamcity_messages.testFailed('checkTokenExistence({}, {})'.format(os.path.basename(file_name),
                                                                                       lang), "Missing tokens found")
                 else:
-                    teamcity_messages.testFinished('checkTokenExistence({}, {})'.format(os.path.basename(file_name), 
-                                                                                      lang))
+                    teamcity_messages.testFinished('checkTokenExistence({}, {})'.format(os.path.basename(file_name),
+                                                                                        lang))
 
 
 def predict_plurals(translator: gettext.translation) -> Dict[int, int]:

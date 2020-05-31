@@ -2,7 +2,7 @@ import _ast
 import ast
 from typing import Dict, Union
 import os
-from pychecktext import teamcity, get_timestamp, teamcity_messages
+from pychecktext import teamcity, teamcity_messages
 
 
 class CheckTextVisitor(ast.NodeVisitor):
@@ -95,7 +95,7 @@ def parse_file(file_path: str, alias: Dict[str, Union[str, None]] = {}):
         except SyntaxError as excinfo:
             if teamcity:
                 teamcity_messages.customMessage("Syntax error whilst parsing file '{}'",
-                    status="ERROR", errorDetails=excinfo)
+                    status="ERROR", errorDetails=excinfo.msg)
             else:
                 print("Syntax error in file '{}': {}".format(file_path, excinfo))
             return None

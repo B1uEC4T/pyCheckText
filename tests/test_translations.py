@@ -10,6 +10,7 @@ from pychecktext.validator import get_translation_object, validate_translations 
 
 supported_languages = ['en', 'ar', 'ay']
 
+
 @pytest.fixture
 def english_fixture():
     language = 'en'
@@ -20,14 +21,6 @@ def english_fixture():
               "./tests/test_module/locale/{}/LC_MESSAGES/test.mo".format(language))
     output = get_translation_object("./tests/test_module/locale", "test", [language])
     yield output
-
-@pytest.fixture
-def cleanup_fixture():
-    yield
-    try:
-        shutil.rmtree('./tests/test_module/locale')
-    except OSError:
-        pass
 
 
 def all_combinations(any_list: List[any]) -> Iterable[Union[str, List[str]]]:
@@ -182,7 +175,3 @@ def test_missing_msgid(english_fixture,
     assert stderr == ''
     assert len(stdout) == 2
     assert all(test in stdout[1] for test in ['not_the_messiah', 'en'])
-
-# missing single translation
-
-# missing plural

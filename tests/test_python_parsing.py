@@ -4,7 +4,7 @@ import os
 sys.path.extend('../../')
 from pychecktext.checktext_parser import parse_file  # noqa: E402
 
-# test one isntance of each named call
+# test one instance of each named call
 
 calls = [
     ("dgettext('test', 'test.single')", "dgettext", ["test", "test.single"]),
@@ -39,15 +39,6 @@ plural_rules = {
     'ar': {0: 0, 1: 1, 2: 2, 4: 3, 110: 4, 114: 5},
     'ay': {1: 0}
 }
-
-
-@pytest.fixture
-def cleanup_fixture():
-    yield
-    try:
-        os.remove('./tests/test_module/test_file.py')
-    except OSError:
-        pass
 
 
 @pytest.mark.parametrize("call_str, call_name, expected", calls)

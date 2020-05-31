@@ -10,12 +10,5 @@ try:
         teamcity = False
 except ImportError:
     teamcity = False
-teamcity = True
-
-
-def get_timestamp():
-    timestamp = datetime.datetime.now(tz=tz.tzlocal()).strftime('%Y-%M-%dT%X.%f%z')
-    return timestamp
-
 
 teamcity_messages = tc.TeamcityServiceMessages()
